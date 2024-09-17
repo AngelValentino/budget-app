@@ -75,44 +75,90 @@ class Category:
         return round(self.total_spend, 2)
         
 
-food = Category('Food')
+food = Category('Business')
 food.deposit(1000, 'deposit')
-food.withdraw(10.15, 'groceries')
-food.withdraw(15.89, 'restaurant and more food for dessert')
-clothing = Category('Clothing')
-food.transfer(50, clothing)
-print(food, food.get_withdraws())
+food.withdraw(5, 'groceries')
 
-clothing = Category('Clothing')
+clothing = Category('Food')
 clothing.deposit(1000, 'deposit')
-clothing.withdraw(70, 'Polo shirt')
-clothing.withdraw(120, 'Sports jacket')
-clothing.transfer(20, food)
-print(clothing, clothing.get_withdraws())
+clothing.withdraw(140, 'Polo shirt')
 
-auto = Category('Auto')
+auto = Category('Entertainment')
 auto.deposit(20000, 'deposit')
-auto.withdraw(400, 'Custom Cafe Racer Motorcycle parts')
-print(auto, auto.get_withdraws())
+auto.withdraw(40, 'Custom Cafe Racer Motorcycle parts')
+
 
 def create_spend_chart(categories):
     total_sepend = 0
     category_spend = {}
+    formatted_chart = 'Percentage spent by category\n'
+
+    def check_category_bar(category_bar, current_bar):
+        # If the category bar is larger or equal to the current bar print 'o'
+        if category_bar >= current_bar:
+            return 'o'
+        # Else return a space
+        return ' '
+        
+    def check_categories_bar_chart(bar):
+        formatted_categories_bars = ''
+
+        for category in category_spend:
+            # Print 'o' character as bars
+            formatted_categories_bars += check_category_bar(category_spend[category], bar) + '  '
+        
+        return formatted_categories_bars
+    
+    def format_horizontal_line():
+        # Number of spaces form the current bar + the pipe "|" symbol
+        bar_spaces = 4
+        # First space after the current bar
+        starter_space = 1
+        category_bar_spaces = 0
+        # Add two spaces after the last bar
+        final_spaces = 2
+
+        # Calculate how many categories are and add a space for each one
+        for _ in categories:
+            category_bar_spaces += 1
+
+        # Calculate the number of spaces between category bars
+        category_bar_between_spaces = (category_bar_spaces - 1) * 2
+        # Calculate the total width of the horizontal line
+        horizontal_line_width = starter_space + category_bar_spaces + category_bar_between_spaces + final_spaces
+        # Create the horizontal line consisting of hyphens
+        total_line_hypens = "-" * horizontal_line_width
+
+        # Right-align the horizontal line within a total width that includes the additional bar spaces
+        return f'{total_line_hypens:>{bar_spaces + horizontal_line_width}}\n'
 
     # Get the total spend in all categories
     for category in categories:
         total_sepend += category.get_withdraws()
 
-    # Get what each cateogoty has spend compared to the others
+    # Get what each cateogory has spend compared to the others
     # (single category amount spent) / (total spent across all categories)
     for category in categories:
         # Make a dicitionary entry containing the ammount in percentatge the cateogry has spent
         # floored to the nearrest 10 => 58 becomes 50
         category_spend[category.type] = math.floor(int((category.get_withdraws() / total_sepend) * 100) / 10) * 10
 
+    # Generate bar chart
+    for i in range(10, -1, -1):
+        bar = i * 10
+        formatted_chart += f'{bar:3}| {check_categories_bar_chart(bar)}\n'
+
+    # Generate horizonatl line    
+    formatted_chart += format_horizontal_line()
+
+
+    #TODO Add category names
+
+
+
+
     print(category_spend)
+    return formatted_chart
 
-    #TODO Create spend chart
 
-
-create_spend_chart([food, clothing, auto])
+print(create_spend_chart([food, clothing, auto]))
