@@ -12,7 +12,7 @@ class Category:
         self.total_spend = 0
 
     def __str__(self):
-        # Center categroy title between asterisks at max 30 characters
+        # Center category title between asterisks at max 30 characters
         title = f'{self.type:*^30}\n' 
         assets = ''
 
@@ -30,13 +30,13 @@ class Category:
     def deposit(self, amount, description = ''):
         # Add a record of the transaction to the ledger
         self.ledger.append({'amount': amount, 'description': description})
-        # Add the amount to the the current balance
+        # Add the amount to the current balance
         self.balance += amount
 
     def withdraw(self, amount, description = ''):
         # Attempt to withdraw funds; return False if insufficient funds
         if not self.check_funds(amount):
-            print('insufficent funds')
+            print('insufficient funds')
             return False
         
         # Add a record of the transaction to the ledger
@@ -54,15 +54,13 @@ class Category:
 
     def check_funds(self, amount):
         # Check if there are sufficient funds to cover the requested amount
-        if amount > self.get_balance():
-            return False
-        return True
+        return amount <= self.get_balance()
 
     def transfer(self, amount, target_category):
         # Attempt to transfer funds to another category
         if not self.check_funds(amount):
-            # Rturnn false if there are not enough funds
-            print('insufficent funds')
+            # Return false if there are not enough funds
+            print('insufficient funds')
             return False
         # Withdraw the amount from the current category
         self.withdraw(amount, f'Transfer to {target_category.type}')
@@ -71,94 +69,127 @@ class Category:
         
         return True
 
-    def get_withdraws(self):
+    def get_withdrawals(self):
         return round(self.total_spend, 2)
         
-
-food = Category('Business')
-food.deposit(1000, 'deposit')
-food.withdraw(5, 'groceries')
-
-clothing = Category('Food')
-clothing.deposit(1000, 'deposit')
-clothing.withdraw(140, 'Polo shirt')
-
-auto = Category('Entertainment')
-auto.deposit(20000, 'deposit')
-auto.withdraw(40, 'Custom Cafe Racer Motorcycle parts')
-
-
 def create_spend_chart(categories):
-    total_sepend = 0
-    category_spend = {}
-    formatted_chart = 'Percentage spent by category\n'
+    bar_spaces = 4 # Number of spaces form the current bar + the pipe "|" symbol
+    spaces_between_categories = 2 # Number of spaces between bars between category bar or name
+    total_spend = 0 # Total amount spent across all categories
+    category_spend = {} # Dictionary to store the percentage spent per category
+    category_names = [] # List to store names of categories
+    longest_category_name = 0 # Length of the longest category name
+    formatted_chart = 'Percentage spent by category\n' # Initialize the chart with a header
 
+    # Determine if a category bar should be represented with 'o' or a space based on the current bar level
     def check_category_bar(category_bar, current_bar):
-        # If the category bar is larger or equal to the current bar print 'o'
-        if category_bar >= current_bar:
-            return 'o'
-        # Else return a space
-        return ' '
-        
+        return 'o' if category_bar >= current_bar else ' '
+    
+    # Create the visual representation of the bar chart for all categories with their specific spending
     def check_categories_bar_chart(bar):
         formatted_categories_bars = ''
 
         for category in category_spend:
-            # Print 'o' character as bars
-            formatted_categories_bars += check_category_bar(category_spend[category], bar) + '  '
+            # Print the bars or spaces
+            formatted_categories_bars += check_category_bar(category_spend[category], bar) + ' ' * spaces_between_categories
         
         return formatted_categories_bars
     
+    # Format the horizontal line at the bottom of the chart
     def format_horizontal_line():
-        # Number of spaces form the current bar + the pipe "|" symbol
-        bar_spaces = 4
         # First space after the current bar
         starter_space = 1
-        category_bar_spaces = 0
-        # Add two spaces after the last bar
+        # Spaces after the last bar
         final_spaces = 2
-
-        # Calculate how many categories are and add a space for each one
-        for _ in categories:
-            category_bar_spaces += 1
+        # Variable to keep track of spaces between bars
+        category_bar_spaces = len(categories)
 
         # Calculate the number of spaces between category bars
-        category_bar_between_spaces = (category_bar_spaces - 1) * 2
+        category_bar_between_spaces = (category_bar_spaces - 1) * spaces_between_categories
         # Calculate the total width of the horizontal line
         horizontal_line_width = starter_space + category_bar_spaces + category_bar_between_spaces + final_spaces
-        # Create the horizontal line consisting of hyphens
-        total_line_hypens = "-" * horizontal_line_width
 
-        # Right-align the horizontal line within a total width that includes the additional bar spaces
-        return f'{total_line_hypens:>{bar_spaces + horizontal_line_width}}\n'
+        # Return the formatted horizontal line with leading spaces
+        return ' ' * bar_spaces + '-' * horizontal_line_width + '\n'
 
-    # Get the total spend in all categories
+    # Format the category names to align them with the bars in the chart
+    def get_formatted_names():
+        # Variable to keep track of the formatted names
+        formatted_names = ''
+
+        # Create a line for each character position in the category names
+        for i in range(0, longest_category_name):
+            # Initial spaces before names
+            formatted_names += ' ' * (bar_spaces + 1)
+
+            # Add characters line
+            for name in category_names:
+                try:
+                    # If the character has been found add it to the formatted line
+                    formatted_names +=  name[i]
+                except IndexError:
+                    # Else add a space
+                    formatted_names += ' '
+                # Add spaces between category name characters
+                formatted_names += ' ' * spaces_between_categories
+            
+            # If is the last character do not add a new line
+            if i < longest_category_name - 1:
+                formatted_names += '\n'
+        
+        # Return formatted names
+        return formatted_names
+    
+    # Calculate total spending and store category names
     for category in categories:
-        total_sepend += category.get_withdraws()
+        category_names.append(category.type)
+        total_spend += category.get_withdrawals()
 
-    # Get what each cateogory has spend compared to the others
+    # Determine the length of the longest category name
+    for name in category_names:
+        if len(name) > longest_category_name:
+            longest_category_name = len(name)
+
+    # Calculate percentage spent per category
     # (single category amount spent) / (total spent across all categories)
-    for category in categories:
-        # Make a dicitionary entry containing the ammount in percentatge the cateogry has spent
-        # floored to the nearrest 10 => 58 becomes 50
-        category_spend[category.type] = math.floor(int((category.get_withdraws() / total_sepend) * 100) / 10) * 10
+    if total_spend > 0:
+        for category in categories:
+            # Make a dictionary entry containing the amount in percentage the category has spent
+            # floored to the nearest 10 => 58 becomes 50
+            percentage_spent = (category.get_withdrawals() / total_spend) * 100
+            category_spend[category.type] = math.floor(percentage_spent / 10) * 10
+    else:
+        # Handle case where total_spend is zero to avoid division by zero
+        for category in categories:
+            category_spend[category.type] = 0
 
-    # Generate bar chart
+    # Add the bar chart to the formatted string (from 0% to 100%)
     for i in range(10, -1, -1):
+        # Calculate the bar percentage
         bar = i * 10
+        # Add the bar percentage with the available spending bars for all the available categories
         formatted_chart += f'{bar:3}| {check_categories_bar_chart(bar)}\n'
 
-    # Generate horizonatl line    
+    # Add horizontal line to the formatted string 
     formatted_chart += format_horizontal_line()
 
+    # Add the categories names to the formatted string
+    formatted_chart +=  get_formatted_names()
 
-    #TODO Add category names
-
-
-
-
-    print(category_spend)
     return formatted_chart
 
+# Example usage of the Category class and create_spend_chart function
+business = Category('Business')
+business.deposit(1000, 'deposit')
+business.withdraw(300, 'stock')
 
-print(create_spend_chart([food, clothing, auto]))
+food = Category('Food')
+food.deposit(1000, 'deposit')
+food.withdraw(10.15, 'groceries')
+food.withdraw(15.89, 'restaurant and more food for dessert')
+entertainment = Category('Entertainment')
+food.transfer(50, entertainment)
+
+# Print the food category details and the formatted spend chart
+print(food)
+print(create_spend_chart([business, food, entertainment]))
